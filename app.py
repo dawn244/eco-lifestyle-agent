@@ -114,7 +114,7 @@ if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
    
     # ♻️ Environmental system prompt
-    system_prompt = """
+   eco_prompt = """
    You are Eco Lifestyle Agent — an assistant that gives clear, short, and practical eco-friendly living tips.
    
    Guidelines:
