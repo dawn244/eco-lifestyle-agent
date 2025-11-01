@@ -1,10 +1,12 @@
 #import Langchain Dependencies
-from langchain.document_loaders import PyPDFLoader 
-from langchain.indexes import VectorstoreIndexCreator
+from langchain_community.document_loaders import PyPDFLoader 
+from langchain_community.vectorstores import FAISS
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import PyPDFLoader
 from langchain.chains import RetrievalQA
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-
 
 # python -m streamlit run app.py
 
@@ -16,10 +18,10 @@ from langchain_ibm import ChatWatsonx
 
 #create llm using longchain
 llm = ChatWatsonx (
-    model_id = 'ibm/granite-3-8b-instruct',
-    project_id = '0763756d-c430-49e5-8705-eda1f8a616f7',
-    url = 'https://au-syd.ml.cloud.ibm.com', 
-    apikey = 'G8whaMJnXB1_Vcwff8ShElcWuL4gfxVV-dthPhTZxAVt',
+   model_id = st.secrets["MODEL_ID"],
+    project_id = st.secrets['PROJECT_ID'],
+    url = st.secrets['URL'], 
+    apikey = st.secrets['API_KEY'],
     params = {
         "temperature": 0.7,
         "max_new_tokens": 200,
@@ -35,14 +37,21 @@ def load_pdfs():
         "Sustainable_Habits.pdf",
     ]
     
-    loaders = [PyPDFLoader(pdf) for pdf in pdf_files]
+    loader= [PyPDFLoader(pdf) for pdf in pdf_files]
     
     # Create vector database for all PDFs
-    index = VectorstoreIndexCreator(
-        embedding=HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2"),
-        text_splitter=RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
-    ).from_loaders(loaders)
-    #return vector database
+    documents = loader.load()
+
+    # Split text
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    texts = text_splitter.split_documents(documents)
+
+    # Create embeddings
+    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+
+    # Create a FAISS vectorstore
+    db = FAISS.from_documents(texts, embeddings)
+    index = db
     return index
 
 #load the pdf into the index
@@ -55,34 +64,91 @@ chain = RetrievalQA.from_chain_type(
     retriever=index.vectorstore.as_retriever(),
 )
 
+#Setup the app title
+st.set_page_config(page_title="Eco Lifestyle Agent", page_icon="🌿", layout="wide")
 
-#Setup the app title 
-st.title("Eco Lifestyle Agent Guide")
+# Theme colors
+#primaryColor="#a8d5ba"       # light green
+#backgroundColor="#ffffff"    # white
+#secondaryBackgroundColor="#d0f0f7"  # sea blue
+#font="sans serif"
+
+
+#App Header
+st.markdown(
+    """
+    <h1 style='text-align: center; color: #2e7d32;'>🌿 Eco Lifestyle Agent Guide</h1>
+    <p style='text-align: center; color: #0077b6;'>Ask about sustainable living tips, eco-friendly habits, and more!</p>
+    """,
+    unsafe_allow_html=True
+)
 
 #setup a session state message to hold chat history 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-for message in st.session_state.messages:
-    st.chat_message(message["role"]).markdown(message["content"])
+#Display the chat history in blocks 
+for msg in st.session_state.messages:
+    if msg["role"] == "user":
+        st.markdown(f"""
+        <div style='text-align: right; background-color: #a8d5ba; color: #000000; padding: 10px; 
+                    border-radius: 10px; margin: 5px; display: inline-block;'>{msg["content"]}</div>
+        """, unsafe_allow_html=True)
+    else:
+        points = msg["content"].split("\n")
+        for point in points:
+            if point.strip() != "":
+                st.markdown(f"""
+                <div style='text-align: left; background-color: #d0f0f7; color: #000000; padding: 10px; 
+                            border-radius: 10px; margin: 5px; display: inline-block;'>{point}</div>
+                """, unsafe_allow_html=True)
 
 #Build a prompt imput template to display the elements 
-prompt = st.text_input("Ask your Eco Lifestyle Agent a question:")  
+prompt = st.text_input("Ask for eco-friendly tips (e.g., How can I save energy at home? 🌎:")
 
-#if user hits enter
 if prompt:
-    #display the prompt
-    st.chat_message('user').markdown(prompt)
+    # Display prompt
+    #st.chat_message('user').markdown(prompt)
     #append the user prompt to the session state messages
     st.session_state.messages.append({"role": "user", "content": prompt})
-    #send the prompt to the llm model
-    response = chain.run(prompt)
-    #show the llm response
-    st.chat_message('assistant').markdown(response)
-    #append the llm response to the session state messages
+   
+    # ♻️ Environmental system prompt
+    eco_prompt = f"""
+    You are an environmental lifestyle expert who helps people live sustainably.
+    Provide eco-friendly advice based on the question below, using real and practical solutions.
+
+    Be warm, encouraging, and informative. Avoid generic statements.
+
+    Question: {prompt}
+
+    Respond with:
+    - Practical eco-tips or sustainable alternatives
+    - Simple steps to implement
+    - Optional ‘Did You Know?’ eco-fact
+    """
+
+    # Generate response using retrieval-based QA chain
+    response = chain.run(eco_prompt)
+
+    #llm response
+    response = chain.run(prompt) 
+    # Add assistant response
     st.session_state.messages.append({"role": "assistant", "content": response})
+    # Display user message immediately
+    st.markdown(f"""
+    <div style='text-align: right; background-color: #a8d5ba; color: #000000; padding: 10px; 
+                border-radius: 10px; margin: 5px; display: inline-block;'>{prompt}</div>
+    """, unsafe_allow_html=True)
 
 
+    # Display assistant response immediately
+    points = response.split("\n")
+    for point in points:
+        if point.strip() != "":
+            st.markdown(f"""
+            <div style='text-align: left; background-color: #d0f0f7; color: #000000; padding: 10px; 
+                        border-radius: 10px; margin: 5px; display: inline-block;'>{point}</div>
+            """, unsafe_allow_html=True)
 
 
 
