@@ -1,26 +1,26 @@
-# Streamlit for UI
+# ---- Streamlit for UI ----
 streamlit>=1.25.0
 
-# LangChain core
-langchain>=0.1.0
+# ---- LangChain ecosystem (stable modular versions for Streamlit Cloud) ----
+langchain==0.2.12
+langchain-core==0.2.27
+langchain-community==0.2.11
+langchain-text-splitters==0.2.2
 
-# LangChain community modules (for PyPDFLoader)
-langchain-community>=0.0.196
-
-# IBM WatsonX integration
+# ---- IBM WatsonX integration ----
 langchain-ibm>=0.0.5
 
-# HuggingFace embeddings
-transformers>=4.40.0
-sentence-transformers>=2.2.2
-torch>=2.1.0
+# ---- Embeddings and Transformers ----
+transformers>=4.41.0
+sentence-transformers>=2.6.0
+torch>=2.2.0
 
-# PDF handling
+# ---- PDF Handling ----
 pypdf>=3.15.0
 
-# Vector database for embeddings
+# ---- Vector Database ----
 faiss-cpu>=1.7.4
 
-# Utilities often required
-numpy>=1.25.0
-typing-extensions>=4.7.1
+# ---- Utilities ----
+numpy>=1.26.0
+typing-extensions>=4.11.0
