@@ -37,22 +37,23 @@ def load_pdfs():
         "Sustainable_Habits.pdf",
     ]
     
-    loader= [PyPDFLoader(pdf) for pdf in pdf_files]
+   loaders = [PyPDFLoader(pdf) for pdf in pdf_files]
     
-    # Create vector database for all PDFs
-    documents = loader.load()
+    documents = []
+    for loader in loaders:
+        documents.extend(loader.load())
 
     # Split text
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     texts = text_splitter.split_documents(documents)
 
-    # Create embeddings
+     # Create embeddings and vectorstore
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    vectorstore = FAISS.from_documents(texts, embeddings)
 
-    # Create a FAISS vectorstore
-    db = FAISS.from_documents(texts, embeddings)
-    index = db
-    return index
+    # Return retriever or vectorstore (your choice)
+    return vectorstore.as_retriever()
+
 
 #load the pdf into the index
 index = load_pdfs()
