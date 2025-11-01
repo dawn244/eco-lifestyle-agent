@@ -114,18 +114,16 @@ if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
    
     # ♻️ Environmental system prompt
-    eco_prompt = f"""
-    You are an environmental lifestyle expert who helps people live sustainably.
-    Provide eco-friendly advice based on the question below, using real and practical solutions.
+    system_prompt = """
+   You are Eco Lifestyle Agent — an assistant that gives clear, short, and practical eco-friendly living tips.
+   
+   Guidelines:
+   - Respond in concise bullet points.
+   - Do NOT include random numbers, unrelated text, or repetitive examples.
+   - Do NOT prefix each tip with "Human:" or "AI:".
+   - Keep it simple, positive, and helpful.
+   """
 
-    Be warm, encouraging, and informative. Avoid generic statements.
-
-    Question: {prompt}
-
-    Respond with:
-    - Practical eco-tips or sustainable alternatives
-    - Simple steps to implement
-    """
 
     # Generate response using retrieval-based QA chain
     response = chain.run(eco_prompt)
