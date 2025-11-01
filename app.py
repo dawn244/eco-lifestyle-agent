@@ -125,7 +125,6 @@ if prompt:
     Respond with:
     - Practical eco-tips or sustainable alternatives
     - Simple steps to implement
-    - Optional ‘Did You Know?’ eco-fact
     """
 
     # Generate response using retrieval-based QA chain
