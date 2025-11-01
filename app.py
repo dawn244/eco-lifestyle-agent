@@ -37,7 +37,7 @@ def load_pdfs():
         "Sustainable_Habits.pdf",
     ]
     
-   loaders = [PyPDFLoader(pdf) for pdf in pdf_files]
+    loaders = [PyPDFLoader(pdf) for pdf in pdf_files]
     
     documents = []
     for loader in loaders:
